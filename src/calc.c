@@ -1,5 +1,8 @@
 #include "calc.h"
 
+//  добавить унарные операции
+// установить qt
+
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
         if(p->is_num) printf("%f ", p->num);
@@ -65,7 +68,7 @@ int define_priority(char op) {
     return prior;
 }
 
-double calculate(double num1, double num2, char op) {
+double operations(double num1, double num2, char op) {
     double res = 0.0;
 
     if (op == '+') res = num1 + num2;
@@ -122,6 +125,43 @@ void reverse_stack(Node **plist) {
     *plist = reversed;
 }
 
+void fill_notation(Node **notation, Node **tmp, int *er) {
+    while (!is_empty(*tmp) && !(*er)) {
+        char op;
+        double res;
+
+        pop(tmp, &res, &op);
+        if (op == '(' || op == ')') *er = 1; // если во временном стеке осталась хоть одна скобка то ввод не корректен
+        else push(notation, 0.0, 0, op);
+    }
+}
+
+double calculation(Node ** notation) {
+    Node * calc = NULL;
+    int last = 0;
+    double res = 0.0;
+
+    while (!last) {
+        char op = 0;
+        double num1 = 0.0, num2 = 0.0, num = 0.0;
+        if((*notation)->is_num) {
+            pop(notation, &num, &op);
+            push(&calc, num, 1, op);
+        }
+        else {
+            pop(notation, &num, &op);
+            if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то дбавляется второй оперант
+                pop(&calc, &num2, &op);
+            }
+            pop(&calc, &num1, &op);
+            res = operations(num1, num2, op);
+            if(is_empty(*notation)) last = 1;
+            else push(&calc, res, 1, op);
+        }
+    }
+    return res;
+}
+
 
 int main() {
     Node * notation = NULL;
@@ -129,14 +169,18 @@ int main() {
     char buffer[255] = "\0";
     int k = 0;
     double num = 0;
+    int error = 0;
+    double result = 0.0;
     //char test[] = "6+3*(1+4*5)*2";
     //char test[] = "5+15mod10*2";
     //char test[] = "1+2^3+(4+7(1-8)*2)";
     //char test[] = "10^2";
     //char test[] = "5+cos(2*4+2)";
-    char test[] = "atan(5)-sin(2+8)";
+    //char test[] = "tan(5)-sin(2+8)))*20";
+    char test[] = "80-9-(+9)";
+    //char test[] = "-10+9*2";  //удивительно но работает и так
 
-    for (size_t i = 0; i < (sizeof(test)/ sizeof(test[0]) - 1); i++) {
+    for (size_t i = 0; i < (sizeof(test)/ sizeof(test[0]) - 1) && !error; i++) {
         if (is_num(test[i])) {
             do {
                 buffer[k] = test[i];
@@ -154,75 +198,34 @@ int main() {
             double res;
 
             if(test[i] == ')') {
-                while (op != '('){
-                    pop(&stack_tmp, &res, &op);
-                    if (op != '(') push(&notation, 0.0, 0, op);
+                while (op != '(' && !error){
+                    error = pop(&stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
+                    if (op != '(' && !error) push(&notation, 0.0, 0, op);
                 }
             }
             else if(test[i] == '(') {
                 push(&stack_tmp, 0.0, 0, test[i]);
             }
             else {
-                while (!is_empty(stack_tmp) && stack_tmp->priority >= define_priority(test[i])) {       // если у нового элемента приоритет меньше все выталкиается
+                while (!is_empty(stack_tmp) && stack_tmp->priority >= define_priority(test[i])) {// если у нового элемента приоритет меньше все выталкиается
                     pop(&stack_tmp, &res, &op);
                     push(&notation, 0.0, 0, op);
                 }
-
                 push(&stack_tmp, 0.0, 0, check_op(test[i], test[i+1], &i));
 
             }
         }
-        //print(notation);
+    }
+    fill_notation(&notation, &stack_tmp, &error); // добавляет оставшиеся операторы из временного стека к нотации
+
+    if (!error) {
+        reverse_stack(&notation); // переворачивает стек
+        printf("notation reversed(final): ");
+        print(notation);
+        result = calculation(&notation);
     }
 
-    while (!is_empty(stack_tmp)) {
-        char op;
-        double res;
-        pop(&stack_tmp, &res, &op);
-        push(&notation, 0.0, 0, op);
-    }
-
-    printf("stack: ");
-    print(notation);
-    reverse_stack(&notation);
-
-    printf("notation: ");
-    print(notation);
-
-    Node * calc = NULL;
-    int last = 0;
-
-    while (!last) {
-        char op = 0;
-        double num1 = 0.0, num2 = 0.0, num = 0.0;
-        if(notation->is_num) {
-            pop(&notation, &num, &op);
-            push(&calc, num, 1, op);
-        }
-        else {
-            pop(&notation, &num, &op);
-            if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то дбавляется второй оперант
-                pop(&calc, &num2, &op);
-            }
-
-            pop(&calc, &num1, &op);
-            if(is_empty(notation)) last = 1;
-
-            //printf("num1 - %f, num2 - %f, op - '%c', last - %d", num1, num2, op, last);
-            push(&calc, calculate(num1, num2, op), 1, op);
-        }
-        // printf("\n");
-        // printf("notation: ");
-        // print(notation);
-
-        // printf("calc: ");
-        // print(calc);
-        // printf("\n");
-
-    }
-
-    printf("calc: ");
-    print(calc);
+    printf("result - %f, error - %s", result, error ? "YES" : "NO");
 
     return 0;
 }

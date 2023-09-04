@@ -21,8 +21,9 @@ int is_empty(Node *list);
 int pop(Node ** plist, double *num, char *op);
 int is_num(char n);
 int define_priority(char op);
-double calculate(double num1, double num2, char op);
+double operations(double num1, double num2, char op);
 void reverse_stack(Node **plist);
 char check_op(char ch1, char ch2, size_t *index);
+void fill_notation(Node **notation, Node **tmp, int *er);
 
 #endif
