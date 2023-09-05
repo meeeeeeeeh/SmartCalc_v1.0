@@ -23,7 +23,9 @@ int is_num(char n);
 int define_priority(char op);
 double operations(double num1, double num2, char op);
 void reverse_stack(Node **plist);
-char check_op(char ch1, char ch2, size_t *index);
+char check_op(char ch1, char ch2, int *index);
 void fill_notation(Node **notation, Node **tmp, int *er);
+double calculation(Node ** notation);
+void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error);
 
 #endif

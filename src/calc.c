@@ -1,7 +1,25 @@
 #include "calc.h"
 
-//  добавить унарные операции
-// установить qt
+int main() {
+    Node * notation = NULL;
+    Node * stack_tmp = NULL;
+    int error = 0;
+    double result = 0.0;
+    char input[] = "-80-9*((-9)+5)))+sin(2^5)";
+    int len = (int)strlen(input);
+    
+    error = len <= 255 ? 0 : 1;
+    convert_to_notation(&notation, &stack_tmp, input, len, &error);
+    if (!error) {
+        reverse_stack(&notation); // переворачивает стек
+        printf("notation reversed(final): ");
+        print(notation);
+        result = calculation(&notation);
+    }
+    printf("result - %f, error - %s", result, error ? "YES" : "NO");
+    return 0;
+}
+
 
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
@@ -91,7 +109,7 @@ double operations(double num1, double num2, char op) {
 }
 
 // присвоить оператору нужый символ и изменить индекс
-char check_op(char ch1, char ch2, size_t *index) {
+char check_op(char ch1, char ch2, int *index) {
     char res = ch1;
     if (ch1 == 'm' || ch1 == 'c' || ch1 == 't' || (ch1 == 's' && ch2 == 'i') || (ch1 == 'l' && ch2 == 'o')) {
         *(index) += 2;
@@ -162,70 +180,49 @@ double calculation(Node ** notation) {
     return res;
 }
 
-
-int main() {
-    Node * notation = NULL;
-    Node * stack_tmp = NULL;
+void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error) {
     char buffer[255] = "\0";
     int k = 0;
     double num = 0;
-    int error = 0;
-    double result = 0.0;
-    //char test[] = "6+3*(1+4*5)*2";
-    //char test[] = "5+15mod10*2";
-    //char test[] = "1+2^3+(4+7(1-8)*2)";
-    //char test[] = "10^2";
-    //char test[] = "5+cos(2*4+2)";
-    //char test[] = "tan(5)-sin(2+8)))*20";
-    char test[] = "80-9-(+9)";
-    //char test[] = "-10+9*2";  //удивительно но работает и так
 
-    for (size_t i = 0; i < (sizeof(test)/ sizeof(test[0]) - 1) && !error; i++) {
-        if (is_num(test[i])) {
+    if (input[0] == '-' || input[0] == '+') push(notation, 0.0, 1, 0); // унарные знаки вначале строки
+    for (int i = 0; i < len && !(*error); i++) {
+        if (is_num(input[i])) {
             do {
-                buffer[k] = test[i];
+                buffer[k] = input[i];
                 k++;
                 i++;
-            } while (is_num(test[i]) || test[i] == '.');
+            } while (is_num(input[i]) || input[i] == '.');
             buffer[k] = '\0';
             num = atof(buffer);
             i--;
             k = 0;
-            push(&notation, num, 1, 0);
+            push(notation, num, 1, 0);
         }
         else {
             char op = 0;
             double res;
 
-            if(test[i] == ')') {
-                while (op != '(' && !error){
-                    error = pop(&stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
-                    if (op != '(' && !error) push(&notation, 0.0, 0, op);
+            if(input[i] == ')') {
+                while (op != '(' && !(*error)){
+                    *error = pop(stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
+                    if (op != '(' && !(*error)) push(notation, 0.0, 0, op);
                 }
             }
-            else if(test[i] == '(') {
-                push(&stack_tmp, 0.0, 0, test[i]);
+            else if(input[i] == '(') {
+                push(stack_tmp, 0.0, 0, input[i]);
+                if (input[i+1] == '-' || input[i+1] == '+') push(notation, 0.0, 1, 0); // унарные знаки не вначале строки
             }
             else {
-                while (!is_empty(stack_tmp) && stack_tmp->priority >= define_priority(test[i])) {// если у нового элемента приоритет меньше все выталкиается
-                    pop(&stack_tmp, &res, &op);
-                    push(&notation, 0.0, 0, op);
+                while (!is_empty(*stack_tmp) && (*stack_tmp)->priority >= define_priority(input[i])) {// если у нового элемента приоритет меньше все выталкиается
+                    pop(stack_tmp, &res, &op);
+                    push(notation, 0.0, 0, op);
                 }
-                push(&stack_tmp, 0.0, 0, check_op(test[i], test[i+1], &i));
+                push(stack_tmp, 0.0, 0, check_op(input[i], input[i+1], &i));
 
             }
         }
     }
-    fill_notation(&notation, &stack_tmp, &error); // добавляет оставшиеся операторы из временного стека к нотации
-
-    if (!error) {
-        reverse_stack(&notation); // переворачивает стек
-        printf("notation reversed(final): ");
-        print(notation);
-        result = calculation(&notation);
-    }
-
-    printf("result - %f, error - %s", result, error ? "YES" : "NO");
-
-    return 0;
+    fill_notation(notation, stack_tmp, error); // добавляет оставшиеся операторы из временного стека к нотации
 }
+
