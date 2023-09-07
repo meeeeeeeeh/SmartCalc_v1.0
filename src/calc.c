@@ -1,26 +1,5 @@
 #include "calc.h"
 
-int main() {
-    Node * notation = NULL;
-    Node * stack_tmp = NULL;
-    int error = 0;
-    double result = 0.0;
-    char input[] = "-80-9*((-9)+5)))+sin(2^5)";
-    int len = (int)strlen(input);
-    
-    error = len <= 255 ? 0 : 1;
-    convert_to_notation(&notation, &stack_tmp, input, len, &error);
-    if (!error) {
-        reverse_stack(&notation); // переворачивает стек
-        printf("notation reversed(final): ");
-        print(notation);
-        result = calculation(&notation);
-    }
-    printf("result - %f, error - %s", result, error ? "YES" : "NO");
-    return 0;
-}
-
-
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
         if(p->is_num) printf("%f ", p->num);
@@ -46,7 +25,7 @@ void push(Node ** plist, double n, int is_num, char op) { // 1 арг - указ
     *plist = p;
 }
 
-// вытаскивает один узел из стека и записывает то что там было либо в num либо в op
+// вытаскивает один узел из стека и записывает то что там было либо в num либо в op, если доставать уже нечего - 1
 int pop(Node ** plist, double *num, char *op) {
     int error = 0;
     if (is_empty(*plist)) error = 1;
@@ -154,12 +133,12 @@ void fill_notation(Node **notation, Node **tmp, int *er) {
     }
 }
 
-double calculation(Node ** notation) {
+double calculation(Node ** notation, int *error) {
     Node * calc = NULL;
     int last = 0;
     double res = 0.0;
 
-    while (!last) {
+    while (!last && !(*error)) {
         char op = 0;
         double num1 = 0.0, num2 = 0.0, num = 0.0;
         if((*notation)->is_num) {
@@ -168,13 +147,17 @@ double calculation(Node ** notation) {
         }
         else {
             pop(notation, &num, &op);
-            if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то дбавляется второй оперант
-                pop(&calc, &num2, &op);
+            if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то добавляется второй оперант
+                if(pop(&calc, &num2, &op)) *error = 1; // ошибка в записи нотации, некорректный ввод
             }
-            pop(&calc, &num1, &op);
-            res = operations(num1, num2, op);
-            if(is_empty(*notation)) last = 1;
-            else push(&calc, res, 1, op);
+            if (!(*error)) {
+                if (pop(&calc, &num1, &op)) *error = 1; // ошибка в записи нотации, некорректный ввод
+                else {
+                    res = operations(num1, num2, op);
+                    if(is_empty(*notation)) last = 1;
+                    else push(&calc, res, 1, op);
+                }
+            }
         }
     }
     return res;
@@ -226,3 +209,22 @@ void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int l
     fill_notation(notation, stack_tmp, error); // добавляет оставшиеся операторы из временного стека к нотации
 }
 
+int main() {
+    Node * notation = NULL;
+    Node * stack_tmp = NULL;
+    double result = 0.0;
+    int error = 0;
+    char input[] = "80+(+9)";
+    int len = (int)strlen(input);
+    error = len <= 255 ? 0 : 1; // ошибка переполнения
+
+    convert_to_notation(&notation, &stack_tmp, input, len, &error);
+    if (!error) {
+        reverse_stack(&notation); // переворачивает стек
+        printf("notation reversed(final): ");
+        print(notation);
+        result = calculation(&notation, &error);
+    }
+    printf("result - %f, error - %s", result, error ? "YES" : "NO");
+    return 0;
+}
