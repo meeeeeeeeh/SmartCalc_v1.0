@@ -28,4 +28,5 @@ void fill_notation(Node **notation, Node **tmp, int *er);
 double calculation(Node ** notation, int *error);
 void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error);
 
+
 #endif

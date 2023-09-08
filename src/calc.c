@@ -1,5 +1,10 @@
 #include "calc.h"
 
+//  обработать точку перед числом и чтобы точка не была последней 
+// переделать мейн
+// если результат будет переполнять дабл???
+// почистить все стеки на всякий случай во избежание утечек
+
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
         if(p->is_num) printf("%f ", p->num);
@@ -42,6 +47,14 @@ int pop(Node ** plist, double *num, char *op) {
     }
 
     return error;
+}
+
+void delete_stack(Node ** plist) {
+   while(!is_empty(*plist)) {
+        Node * p = *plist;
+        *plist = p->next;
+        free(p);
+    }
 }
 
 int is_empty(Node *list) {
@@ -160,6 +173,7 @@ double calculation(Node ** notation, int *error) {
             }
         }
     }
+    delete_stack(&calc);
     return res;
 }
 
@@ -167,27 +181,36 @@ void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int l
     char buffer[255] = "\0";
     int k = 0;
     double num = 0;
+    int dot = 0;
 
     if (input[0] == '-' || input[0] == '+') push(notation, 0.0, 1, 0); // унарные знаки вначале строки
     for (int i = 0; i < len && !(*error); i++) {
-        if (is_num(input[i])) {
+        if (is_num(input[i]) || input[i] == '.') {
             do {
-                buffer[k] = input[i];
-                k++;
-                i++;
-            } while (is_num(input[i]) || input[i] == '.');
+                if (dot && input[i] == '.') *error = 1;
+                else {
+                    if (input[i] == '.') dot = 1;
+                    buffer[k] = input[i];
+                    k++;
+                    i++;
+                }
+                
+            } while ((is_num(input[i]) || input[i] == '.') && !(*error));
             buffer[k] = '\0';
+            if(buffer[0] == '.' || buffer[k-1] == '.') *error = 1;
             num = atof(buffer);
             i--;
             k = 0;
+            dot = 0;
             push(notation, num, 1, 0);
+            
         }
         else {
             char op = 0;
             double res;
 
             if(input[i] == ')') {
-                while (op != '(' && !(*error)){
+                while (op != '(' && !(*error)) {
                     *error = pop(stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
                     if (op != '(' && !(*error)) push(notation, 0.0, 0, op);
                 }
@@ -214,7 +237,7 @@ int main() {
     Node * stack_tmp = NULL;
     double result = 0.0;
     int error = 0;
-    char input[] = "80+(+9)";
+    char input[] = "80+(+90.)";
     int len = (int)strlen(input);
     error = len <= 255 ? 0 : 1; // ошибка переполнения
 
@@ -225,6 +248,10 @@ int main() {
         print(notation);
         result = calculation(&notation, &error);
     }
+
+    delete_stack(&notation);
+    delete_stack(&stack_tmp);
+
     printf("result - %f, error - %s", result, error ? "YES" : "NO");
     return 0;
 }
