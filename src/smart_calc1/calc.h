@@ -18,6 +18,7 @@ struct Node {
 void print(Node * list);
 void push(Node ** plist, double n, int is_num, char op);
 int is_empty(Node *list);
+void delete_stack(Node ** plist);
 int pop(Node ** plist, double *num, char *op);
 int is_num(char n);
 int define_priority(char op);
@@ -25,8 +26,9 @@ double operations(double num1, double num2, char op);
 void reverse_stack(Node **plist);
 char check_op(char ch1, char ch2, int *index);
 void fill_notation(Node **notation, Node **tmp, int *er);
-double calculation(Node ** notation, int *error);
-void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error);
-
+double calc_result(Node ** notation, int *error);
+void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error, double x);
+int calc(char *input, double *result, double x);
+void check_num(char *input, int *index, int *error, double *num);
 
 #endif

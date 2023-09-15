@@ -1,9 +1,9 @@
 #include "calc.h"
 
-//  обработать точку перед числом и чтобы точка не была последней 
 // переделать мейн
 // если результат будет переполнять дабл???
-// почистить все стеки на всякий случай во избежание утечек
+// добавить х в код!!!
+
 
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
@@ -121,8 +121,8 @@ char check_op(char ch1, char ch2, int *index) {
 void reverse_stack(Node **plist) {
     Node * reversed = NULL;
     while (!is_empty(*plist)) {
-        char op;
-        double res;
+        char op = 0;
+        double res = 0.0;
         if(!(*plist)->is_num) {
             pop(plist, &res, &op);
             push(&reversed, 0.0, 0, op);
@@ -137,8 +137,8 @@ void reverse_stack(Node **plist) {
 
 void fill_notation(Node **notation, Node **tmp, int *er) {
     while (!is_empty(*tmp) && !(*er)) {
-        char op;
-        double res;
+        char op = 0;
+        double res = 0.0;
 
         pop(tmp, &res, &op);
         if (op == '(' || op == ')') *er = 1; // если во временном стеке осталась хоть одна скобка то ввод не корректен
@@ -146,7 +146,7 @@ void fill_notation(Node **notation, Node **tmp, int *er) {
     }
 }
 
-double calculation(Node ** notation, int *error) {
+double calc_result(Node ** notation, int *error) {
     Node * calc = NULL;
     int last = 0;
     double res = 0.0;
@@ -154,12 +154,16 @@ double calculation(Node ** notation, int *error) {
     while (!last && !(*error)) {
         char op = 0;
         double num1 = 0.0, num2 = 0.0, num = 0.0;
-        if((*notation)->is_num) {
-            pop(notation, &num, &op);
+
+        pop(notation, &num, &op);
+
+
+        if(op == 0) {
+            //pop(notation, &num, &op);
             push(&calc, num, 1, op);
         }
         else {
-            pop(notation, &num, &op);
+            //pop(notation, &num, &op);
             if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то добавляется второй оперант
                 if(pop(&calc, &num2, &op)) *error = 1; // ошибка в записи нотации, некорректный ввод
             }
@@ -177,41 +181,50 @@ double calculation(Node ** notation, int *error) {
     return res;
 }
 
-void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error) {
+void check_num(char *input, int *index, int *error, double *num) {
     char buffer[255] = "\0";
     int k = 0;
-    double num = 0;
     int dot = 0;
+
+    do {
+        if (dot && input[*index] == '.') *error = 1;
+        else {
+            if (input[*index] == '.') dot = 1;
+            buffer[k] = input[*index];
+            k++;
+            (*index)++;
+        }
+    } while ((is_num(input[*index]) || input[*index] == '.') && !(*error));
+
+    buffer[k] = '\0';
+    if(buffer[0] == '.' || buffer[k-1] == '.') *error = 1;
+    else {
+        *num = atof(buffer);
+        (*index)--;
+    }
+}
+
+void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error, double x) {
+    char op = 0;
+    double res = 0.0;
+    double num = 0;
 
     if (input[0] == '-' || input[0] == '+') push(notation, 0.0, 1, 0); // унарные знаки вначале строки
     for (int i = 0; i < len && !(*error); i++) {
-        if (is_num(input[i]) || input[i] == '.') {
-            do {
-                if (dot && input[i] == '.') *error = 1;
-                else {
-                    if (input[i] == '.') dot = 1;
-                    buffer[k] = input[i];
-                    k++;
-                    i++;
-                }
-                
-            } while ((is_num(input[i]) || input[i] == '.') && !(*error));
-            buffer[k] = '\0';
-            if(buffer[0] == '.' || buffer[k-1] == '.') *error = 1;
-            num = atof(buffer);
-            i--;
-            k = 0;
-            dot = 0;
-            push(notation, num, 1, 0);
-            
+        if (input[i] == 'x') {
+            push(notation, x, 1, 0);
+        }
+        else if (is_num(input[i]) || input[i] == '.') {
+            check_num(input, &i, error, &num);
+            if (!(*error)) push(notation, num, 1, 0);
         }
         else {
-            char op = 0;
-            double res;
+            op = 0;
+            res = 0.0;
 
             if(input[i] == ')') {
                 while (op != '(' && !(*error)) {
-                    *error = pop(stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
+                    *error = pop(stack_tmp, &res, &op); // если закрывающей нет соотв открывающей - ошибка        
                     if (op != '(' && !(*error)) push(notation, 0.0, 0, op);
                 }
             }
@@ -232,26 +245,31 @@ void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int l
     fill_notation(notation, stack_tmp, error); // добавляет оставшиеся операторы из временного стека к нотации
 }
 
-int main() {
+int calc(char *input, double *result, double x) {
     Node * notation = NULL;
     Node * stack_tmp = NULL;
-    double result = 0.0;
     int error = 0;
-    char input[] = "80+(+90.)";
     int len = (int)strlen(input);
-    error = len <= 255 ? 0 : 1; // ошибка переполнения
+    error = len <= 255 ? 0 : 2; // ошибка переполнения
 
-    convert_to_notation(&notation, &stack_tmp, input, len, &error);
-    if (!error) {
-        reverse_stack(&notation); // переворачивает стек
-        printf("notation reversed(final): ");
-        print(notation);
-        result = calculation(&notation, &error);
+    if (error != 2) {
+        convert_to_notation(&notation, &stack_tmp, input, len, &error, x);
+        if (!error) {
+            reverse_stack(&notation); // переворачивает стек
+            print(notation);
+            *result = calc_result(&notation, &error);
+        }
+        delete_stack(&notation);
+        delete_stack(&stack_tmp);
     }
+    return error;
+}
 
-    delete_stack(&notation);
-    delete_stack(&stack_tmp);
-
-    printf("result - %f, error - %s", result, error ? "YES" : "NO");
+int main() {
+    double res = 0;
+    double x = 8;
+    char arr[] = "x+6*sqrt(78)+sin(30^5)-x";
+    printf("%d\n", calc(arr, &res, x));
+    printf("%f", res);
     return 0;
 }
