@@ -71,20 +71,23 @@ int define_priority(char op) {
 
     if (op == '(' || op == ')') prior = 0;
     else if (op == '-' || op == '+') prior = 1;
-    else if (op == '*' || op == '/' || op == 'm') prior = 2;
+    else if (op == 'x' || op == '/' || op == 'm') prior = 2;
     else if (op == '^' || op == 'q' ) prior = 3;
     else if (strchr("cstCSTLl", op) != NULL) prior = 4;
 
     return prior;
 }
 
-double operations(double num1, double num2, char op) {
+double operations(double num1, double num2, char op, int *error) {
     double res = 0.0;
 
     if (op == '+') res = num1 + num2;
     else if (op == '-') res = num1 - num2;
-    else if (op == '*') res = num1 * num2;
-    else if (op == '/') res = num1 / num2;
+    else if (op == 'x') res = num1 * num2;
+    else if (op == '/') {
+        if (num2 == 0) *error = 1;
+        else res = num1 / num2;
+    }
     else if (op == '^') res = pow(num1, num2);
     else if (op == 'm') res = fmod(num1, num2); // m == mod(x) остаток от деления
     else if (op == 'q') res = sqrt(num1); // q == sqrt(x) - квадратный корень,
@@ -157,20 +160,18 @@ double calc_result(Node ** notation, int *error) {
 
         pop(notation, &num, &op);
 
-
         if(op == 0) {
-            //pop(notation, &num, &op);
             push(&calc, num, 1, op);
+            if(is_empty(*notation)) *error = 1; // если было только одно число то получается ошибка
         }
         else {
-            //pop(notation, &num, &op);
             if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то добавляется второй оперант
                 if(pop(&calc, &num2, &op)) *error = 1; // ошибка в записи нотации, некорректный ввод
             }
             if (!(*error)) {
                 if (pop(&calc, &num1, &op)) *error = 1; // ошибка в записи нотации, некорректный ввод
                 else {
-                    res = operations(num1, num2, op);
+                    res = operations(num1, num2, op, error);
                     if(is_empty(*notation)) last = 1;
                     else push(&calc, res, 1, op);
                 }
@@ -211,7 +212,7 @@ void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int l
 
     if (input[0] == '-' || input[0] == '+') push(notation, 0.0, 1, 0); // унарные знаки вначале строки
     for (int i = 0; i < len && !(*error); i++) {
-        if (input[i] == 'x') {
+        if (input[i] == 'X') {
             push(notation, x, 1, 0);
         }
         else if (is_num(input[i]) || input[i] == '.') {
@@ -265,11 +266,50 @@ int calc(char *input, double *result, double x) {
     return error;
 }
 
-int main() {
-    double res = 0;
-    double x = 8;
-    char arr[] = "x+6*sqrt(78)+sin(30^5)-x";
-    printf("%d\n", calc(arr, &res, x));
-    printf("%f", res);
-    return 0;
+void credit_calc(double sum, int months, double rate, double *monthly, double *percents, double *all, int mode) { //1 - аннуитетный, 2 - дифференцированный
+    if (mode == 1) {
+        rate = rate /12/100;
+        double k = rate * pow((1+rate), months)/(pow((1+rate), months) - 1);
+        *monthly = sum * k;
+        *all = (*monthly) * months;
+        *percents = (*all) - sum;
+    }
 }
+
+//int main() {
+////     double res = 0;
+////     double x = 0.2;
+////     char arr[] = "1/0";
+////     printf("%d\n", calc(arr, &res, x));
+////     printf("%f", res);
+
+
+//    // double sum = 5000.0;
+//    // int months = 5;
+//    // double rate = 10.0;
+
+//    // double monthly = 0;
+//    // double percents = 0;
+//    // double all = 0;
+//    // int mode = 1;
+
+//    // credit(sum, months, rate, &monthly, &percents, &all, mode);
+//    // printf ("monthly paymet: %f, percents: %f, all: %f", monthly, percents, all);
+//    // // monthly paymet: 1025.138309, percents: 125.691546, all: 5125.691546
+
+//    double sum = 150000.0;
+//    int months = 20;
+//    double rate = 7.0;
+
+//    double monthly = 0;
+//    double percents = 0;
+//    double all = 0;
+//    int mode = 1;
+
+//    credit(sum, months, rate, &monthly, &percents, &all, mode);
+//    printf ("monthly paymet: %f, percents: %f, all: %f\n", monthly, percents, all);
+//    // monthly paymet: 7967.834111, percents: 9356.682212, all: 159356.682212
+
+
+//    return 0;
+//}
