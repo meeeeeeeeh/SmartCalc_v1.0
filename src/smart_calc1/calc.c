@@ -44,6 +44,7 @@ int pop(Node ** plist, double *num, char *op) {
     return error;
 }
 
+// удаляет все элементы стека если они есть
 void delete_stack(Node ** plist) {
    while(!is_empty(*plist)) {
         Node * p = *plist;
@@ -52,15 +53,17 @@ void delete_stack(Node ** plist) {
     }
 }
 
+// проверка на то пуст ли стек
 int is_empty(Node *list) {
     return list == NULL ? 1 : 0;
 }
 
+// проверка на то является ли аргумент числом
 int is_num(char n) {
     return n >= 48 && n <= 57 ? 1 : 0;
 }
 
-// если такого оператора нет, вместо приоритета вернет -1
+// определяет приоритет оператора, если такого оператора нет, вместо приоритета вернет -1
 int define_priority(char op) {
     int prior = -1;
 
@@ -73,6 +76,7 @@ int define_priority(char op) {
     return prior;
 }
 
+// функция со всеми математическими операциями
 double operations(double num1, double num2, char op, int *error) {
     double res = 0.0;
 
@@ -98,7 +102,7 @@ double operations(double num1, double num2, char op, int *error) {
     return res;
 }
 
-// присвоить оператору нужый символ и изменить индекс
+// присваивает оператору нужый для стека символ и корректирует индекс строки
 char check_op(char ch1, char ch2, int *index) {
     char res = ch1;
     if (ch1 == 'm' || ch1 == 'c' || ch1 == 't' || (ch1 == 's' && ch2 == 'i') || (ch1 == 'l' && ch2 == 'o')) {
@@ -116,6 +120,7 @@ char check_op(char ch1, char ch2, int *index) {
     return res;
 }
 
+// переворачивает стек
 void reverse_stack(Node **plist) {
     Node * reversed = NULL;
     while (!is_empty(*plist)) {
@@ -133,6 +138,7 @@ void reverse_stack(Node **plist) {
     *plist = reversed;
 }
 
+// дополняет нотацию операторами из временного стека
 void fill_notation(Node **notation, Node **tmp, int *er) {
     while (!is_empty(*tmp) && !(*er)) {
         char op = 0;
@@ -144,6 +150,7 @@ void fill_notation(Node **notation, Node **tmp, int *er) {
     }
 }
 
+// подсчет ответа, в случае ошибки меняет error на 1, а в res ничего не записывается, стек для подсчета в конце очищается чтобы не возникало утечек памяти
 double calc_result(Node ** notation, int *error) {
     Node * calc = NULL;
     int last = 0;
@@ -180,6 +187,7 @@ double calc_result(Node ** notation, int *error) {
     return res;
 }
 
+//записывает число в буферный массив в виде строки, а после переводит в число и записывает в num, в случе ошибки error = 1
 void check_num(char *input, int *index, int *error, double *num) {
     char buffer[255] = "\0";
     int k = 0;
@@ -203,6 +211,8 @@ void check_num(char *input, int *index, int *error, double *num) {
     }
 }
 
+// перевод строки в постфиксную нотацию с помощью стека, основанного на односвязном списке. При ошибке в скобочной последовательности
+// запись прекращается и error = 1. Если встречается унарный оператор, перед ним в нотацию заносится ноль
 void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error, double x) {
     char op = 0;
     double res = 0.0;
