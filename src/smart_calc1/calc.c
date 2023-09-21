@@ -1,10 +1,5 @@
 #include "calc.h"
 
-// переделать мейн
-// если результат будет переполнять дабл???
-// добавить х в код!!!
-
-
 void print(Node * list) {
     for (Node * p = list; p != NULL; p = p->next) {
         if(p->is_num) printf("%f ", p->num);
@@ -162,7 +157,10 @@ double calc_result(Node ** notation, int *error) {
 
         if(op == 0) {
             push(&calc, num, 1, op);
-            if(is_empty(*notation)) *error = 1; // если было только одно число то получается ошибка
+            if(is_empty(*notation)) {
+                last = 1; // если было только одно число то получается ошибка
+                res = num;
+            }
         }
         else {
             if (strchr("cstqCSTLl", op) == NULL) { // если опеатор не унарный то добавляется второй оперант
@@ -257,7 +255,7 @@ int calc(char *input, double *result, double x) {
         convert_to_notation(&notation, &stack_tmp, input, len, &error, x);
         if (!error) {
             reverse_stack(&notation); // переворачивает стек
-            print(notation);
+            //print(notation);
             *result = calc_result(&notation, &error);
         }
         delete_stack(&notation);
@@ -266,50 +264,83 @@ int calc(char *input, double *result, double x) {
     return error;
 }
 
-void credit_calc(double sum, int months, double rate, double *monthly, double *percents, double *all, int mode) { //1 - аннуитетный, 2 - дифференцированный
+// mode 1 - аннуитетный, 2 - дифференцированный
+void credit_calc(double sum, int months, double rate, double *monthly_max, double *monthly_min, double *percents, double *all, int mode) {
+    rate = rate /12/100;
     if (mode == 1) {
-        rate = rate /12/100;
         double k = rate * pow((1+rate), months)/(pow((1+rate), months) - 1);
-        *monthly = sum * k;
-        *all = (*monthly) * months;
-        *percents = (*all) - sum;
+        *monthly_max = sum * k;
+        *all = (*monthly_max) * months;
     }
+    else if (mode == 2) {
+        double credit_body = sum / months; // сколько в месяц без процентов
+        double month_temp = 0;
+        double sum_temp = sum;
+
+        for (int i = 0; i < months; i++) {
+            month_temp = sum_temp * rate + credit_body;
+            sum_temp -= credit_body;
+            *all += month_temp;
+            if (i == 0) *monthly_max = month_temp;
+            else if (i == months - 1) *monthly_min = month_temp;
+        }
+    }
+    *percents = (*all) - sum;
 }
 
 //int main() {
 ////     double res = 0;
 ////     double x = 0.2;
-////     char arr[] = "1/0";
+////     char arr[] = "(9)";
 ////     printf("%d\n", calc(arr, &res, x));
 ////     printf("%f", res);
-
-
-//    // double sum = 5000.0;
-//    // int months = 5;
-//    // double rate = 10.0;
-
-//    // double monthly = 0;
-//    // double percents = 0;
-//    // double all = 0;
-//    // int mode = 1;
-
-//    // credit(sum, months, rate, &monthly, &percents, &all, mode);
-//    // printf ("monthly paymet: %f, percents: %f, all: %f", monthly, percents, all);
-//    // // monthly paymet: 1025.138309, percents: 125.691546, all: 5125.691546
-
-//    double sum = 150000.0;
-//    int months = 20;
-//    double rate = 7.0;
-
-//    double monthly = 0;
+//
+//
+////    // double sum = 5000.0;
+////    // int months = 5;
+////    // double rate = 10.0;
+//
+////    // double monthly_max = 0;
+////    // double monthly_min = 0;
+////    // double percents = 0;
+////    // double all = 0;
+////    // int mode = 1;
+//
+////    // credit(sum, months, rate, &monthly_max, &monthly_min, &percents, &all, mode);
+////    // printf ("monthly paymet: %f, percents: %f, all: %f", monthly_max, percents, all);
+////    // // monthly paymet: 1025.138309, percents: 125.691546, all: 5125.691546
+//
+////    double sum = 150000.0;
+////    int months = 20;
+////    double rate = 7.0;
+//
+////    double monthly_max = 0;
+////    double monthly_min = 0;
+////    double percents = 0;
+////    double all = 0;
+////    int mode = 1;
+//
+////    credit(sum, months, rate, &monthly_max, &monthly_min, &percents, &all, mode);
+////    printf ("monthly paymet: %f, percents: %f, all: %f\n", monthly_max, percents, all);
+////    // monthly paymet: 7967.834111, percents: 9356.682212, all: 159356.682212
+//
+//
+//
+//
+//    double sum = 15000.0;
+//    int months = 5;
+//    double rate = 5.0;
+//
+//    double monthly_max = 0;
+//    double monthly_min = 0;
 //    double percents = 0;
 //    double all = 0;
-//    int mode = 1;
-
-//    credit(sum, months, rate, &monthly, &percents, &all, mode);
-//    printf ("monthly paymet: %f, percents: %f, all: %f\n", monthly, percents, all);
-//    // monthly paymet: 7967.834111, percents: 9356.682212, all: 159356.682212
-
-
+//    int mode = 2;
+//
+//    credit_calc(sum, months, rate, &monthly_max, &monthly_min, &percents, &all, mode);
+//    printf("monthly paymet: %f .... %f, percents: %f, all: %f\n", monthly_max, monthly_min, percents, all);
+//    // monthly paymet: 3062.500000 .... 3012.500000, percents: 187.500000, all: 15187.500000
+//
+//
 //    return 0;
 //}

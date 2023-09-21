@@ -30,6 +30,6 @@ double calc_result(Node ** notation, int *error);
 void convert_to_notation(Node ** notation, Node ** stack_tmp, char *input, int len, int *error, double x);
 int calc(char *input, double *result, double x);
 void check_num(char *input, int *index, int *error, double *num);
-void credit_calc(double sum, int months, double rate, double *monthly, double *percents, double *all, int mode);
+void credit_calc(double sum, int months, double rate, double *monthly_max, double *monthly_min, double *percents, double *all, int mode);
 
 #endif
