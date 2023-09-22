@@ -6,6 +6,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+
+    credit_wind = new class credit();
+    x = INFINITY;
     ui->setupUi(this);
     connect(ui->pushButton_0, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_1, SIGNAL(clicked()), this, SLOT(input_chars()));
@@ -17,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_8, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_9, SIGNAL(clicked()), this, SLOT(input_chars()));
+    //connect(ui->pushButton_X, SIGNAL(clicked()), this, SLOT(input_chars()));
+    connect(ui->pushButton_pow, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_mod, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_sum, SIGNAL(clicked()), this, SLOT(input_chars()));
     connect(ui->pushButton_dot, SIGNAL(clicked()), this, SLOT(input_chars()));
@@ -39,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete credit_wind;
 }
 
 void MainWindow::input_chars()
@@ -46,7 +52,7 @@ void MainWindow::input_chars()
     QPushButton *button = (QPushButton *)sender();
     QString new_label;
 
-    if (ui->result->text() == "0" || ui->result->text() == "Error")
+    if ((ui->result->text() == "0"  &&  button->text() != '.') ||  ui->result->text() == "Error")
     {
         new_label = button->text();
     }
@@ -78,16 +84,17 @@ void MainWindow::func()
 void MainWindow::on_pushButton_AC_clicked()
 {
     ui->result->setText("0");
+    x = INFINITY;
 }
 
 
 void MainWindow::on_pushButton_eq_clicked()
 {
     double res = 0;
-    double x = 0;
+    //double x = 0;
     QString new_label;
-    QString text = ui->result->text().toLower().toStdString().c_str();
-    if (!calc(text.toLower().toStdString().data(), &res, x) )
+    QString text = ui->result->text().toStdString().c_str();
+    if (!calc(text.toStdString().data(), &res, x) )
     {
         new_label = QString::number(res, 'f', 7);
         ui->result->setText(new_label);
@@ -96,6 +103,7 @@ void MainWindow::on_pushButton_eq_clicked()
     {
         ui->result->setText("Error");
     }
+    x = INFINITY;
 
 }
 
@@ -113,13 +121,13 @@ void MainWindow::on_pushButton_graph_clicked()
     //Вычисляем наши данные
     int i=0;
     //Пробегаем по всем точкам
-    for (double X = x_min; X <= x_max; X += step) {
+    for (double X = x_min; X <= x_max && !error; X += step) {
       double res = 0;
-      QString text = ui->result->text().toLower().toStdString().c_str();
-      error = calc(text.toLower().toStdString().data(), &res, X);
-      y[i] = res;
+      x.push_back(X);
+      QString text = ui->result->text().toStdString().c_str();
+      error = calc(text.toStdString().data(), &res, X);
+      y.push_back(res);
       i++;
-
 
     }
     if (!error) {
@@ -149,12 +157,41 @@ void MainWindow::on_pushButton_graph_clicked()
 //        }
         ui->widget->yAxis->setRange(-10, 10);//Для оси Oy
 
+        ui->widget->graph(0)->setPen(QColor(232, 114, 56)); // color
+        ui->widget->setInteraction(QCP::iRangeZoom, true); // zoom
+
+
         //И перерисуем график на нашем widget
         ui->widget->replot();
 
     }
     else {
         ui->result->setText("Error");
+    }
+}
+
+
+void MainWindow::on_pushButton_graph_2_clicked()
+{
+    //this->close();
+    credit_wind->show();
+
+}
+
+
+void MainWindow::on_pushButton_X_clicked()
+{
+    bool no_er = 0;
+    double new_x = 0;
+    if (x == INFINITY) {
+        new_x = QInputDialog::getDouble(this, "", "Type x: ", 0, DBL_MIN, DBL_MAX, 7, &no_er, Qt::WindowFlags(), 1);
+    }
+    if (no_er) {
+        x = new_x;
+        ui->result->setText(ui->result->text() + "X");
+    }
+    else {
+       ui->result->setText(ui->result->text() + "X");
     }
 }
 
