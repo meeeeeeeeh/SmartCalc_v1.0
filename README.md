@@ -40,8 +40,6 @@ The SmartCalc v1.0 program must be implemented:
       | Unary plus | +a | +a | a+ |
       | Unary minus | -a | -a | a- |
 
-      >Note that the multiplication operator contains the obligatory sign `*`. Processing an expression with the omitted `*` sign is optional and is left to the developer's decision
-
     - **Functions**:
   
       | Function description | Function |
